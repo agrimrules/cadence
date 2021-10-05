@@ -158,7 +158,8 @@ func IsHistoryMutated(request *ArchiveHistoryRequest, historyBatches []*types.Hi
 	lastFailoverVersion := lastEvent.GetVersion()
 	defer func() {
 		if mutated {
-			logger.Warn("history is mutated when during archival with detailed info",
+			logger.Warn(ArchiveNonRetriableErrorMsg+":history is mutated when during archival",
+				tag.ArchivalArchiveFailReason(ErrReasonHistoryMutated),
 				tag.FailoverVersion(lastFailoverVersion),
 				tag.TokenLastEventID(lastEvent.GetEventID()))
 		}
