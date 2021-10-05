@@ -56,7 +56,8 @@ type historyArchiver struct {
 	gcloudStorage connector.Client
 
 	// only set in test code
-	historyIterator archiver.HistoryIterator
+	historyIterator            archiver.HistoryIterator
+	archivingIncompleteHistory bool
 }
 
 type progress struct {
@@ -75,19 +76,26 @@ type getHistoryToken struct {
 func NewHistoryArchiver(
 	container *archiver.HistoryBootstrapContainer,
 	config *config.GstorageArchiver,
+	archivingIncompleteHistory bool,
 ) (archiver.HistoryArchiver, error) {
 	storage, err := connector.NewClient(context.Background(), config)
 	if err == nil {
-		return newHistoryArchiver(container, nil, storage), nil
+		return newHistoryArchiver(container, nil, storage, archivingIncompleteHistory), nil
 	}
 	return nil, err
 }
 
-func newHistoryArchiver(container *archiver.HistoryBootstrapContainer, historyIterator archiver.HistoryIterator, storage connector.Client) archiver.HistoryArchiver {
+func newHistoryArchiver(
+	container *archiver.HistoryBootstrapContainer,
+	historyIterator archiver.HistoryIterator,
+	storage connector.Client,
+	archivingIncompleteHistory bool,
+) archiver.HistoryArchiver {
 	return &historyArchiver{
-		container:       container,
-		gcloudStorage:   storage,
-		historyIterator: historyIterator,
+		container:                  container,
+		gcloudStorage:              storage,
+		historyIterator:            historyIterator,
+		archivingIncompleteHistory: archivingIncompleteHistory,
 	}
 }
 
@@ -162,7 +170,10 @@ func (h *historyArchiver) Archive(ctx context.Context, URI archiver.URI, request
 		}
 
 		if archiver.IsHistoryMutated(request, historyBlob.Body, *historyBlob.Header.IsLast, logger) {
-			return archiver.ErrHistoryMutated
+			if !h.archivingIncompleteHistory {
+				return archiver.ErrHistoryMutated
+			}
+
 		}
 
 		encodedHistoryPart, err := encode(historyBlob.Body)

@@ -74,7 +74,8 @@ type (
 		dirMode   os.FileMode
 
 		// only set in test code
-		historyIterator archiver.HistoryIterator
+		historyIterator            archiver.HistoryIterator
+		archivingIncompleteHistory bool
 	}
 
 	getHistoryToken struct {
@@ -87,14 +88,16 @@ type (
 func NewHistoryArchiver(
 	container *archiver.HistoryBootstrapContainer,
 	config *config.FilestoreArchiver,
+	archivingIncompleteHistory bool,
 ) (archiver.HistoryArchiver, error) {
-	return newHistoryArchiver(container, config, nil)
+	return newHistoryArchiver(container, config, nil, archivingIncompleteHistory)
 }
 
 func newHistoryArchiver(
 	container *archiver.HistoryBootstrapContainer,
 	config *config.FilestoreArchiver,
 	historyIterator archiver.HistoryIterator,
+	archivingIncompleteHistory bool,
 ) (*historyArchiver, error) {
 	fileMode, err := strconv.ParseUint(config.FileMode, 0, 32)
 	if err != nil {
@@ -105,10 +108,11 @@ func newHistoryArchiver(
 		return nil, errInvalidDirMode
 	}
 	return &historyArchiver{
-		container:       container,
-		fileMode:        os.FileMode(fileMode),
-		dirMode:         os.FileMode(dirMode),
-		historyIterator: historyIterator,
+		container:                  container,
+		fileMode:                   os.FileMode(fileMode),
+		dirMode:                    os.FileMode(dirMode),
+		historyIterator:            historyIterator,
+		archivingIncompleteHistory: archivingIncompleteHistory,
 	}, nil
 }
 
@@ -164,7 +168,9 @@ func (h *historyArchiver) Archive(
 		}
 
 		if archiver.IsHistoryMutated(request, historyBlob.Body, *historyBlob.Header.IsLast, logger) {
-			return archiver.ErrHistoryMutated
+			if !h.archivingIncompleteHistory {
+				return archiver.ErrHistoryMutated
+			}
 		}
 
 		historyBatches = append(historyBatches, historyBlob.Body...)

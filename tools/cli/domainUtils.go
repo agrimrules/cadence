@@ -378,6 +378,7 @@ func initializeArchivalProvider(
 	archiverProvider := provider.NewArchiverProvider(
 		serviceConfig.Archival.History.Provider,
 		serviceConfig.Archival.Visibility.Provider,
+		false,
 	)
 
 	historyArchiverBootstrapContainer := &archiver.HistoryBootstrapContainer{

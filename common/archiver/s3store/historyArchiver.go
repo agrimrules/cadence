@@ -67,8 +67,9 @@ type (
 		container *archiver.HistoryBootstrapContainer
 		s3cli     s3iface.S3API
 		// only set in test code
-		historyIterator archiver.HistoryIterator
-		config          *config.S3Archiver
+		historyIterator            archiver.HistoryIterator
+		config                     *config.S3Archiver
+		archivingIncompleteHistory bool
 	}
 
 	getHistoryToken struct {
@@ -88,14 +89,16 @@ type (
 func NewHistoryArchiver(
 	container *archiver.HistoryBootstrapContainer,
 	config *config.S3Archiver,
+	archivingIncompleteHistory bool,
 ) (archiver.HistoryArchiver, error) {
-	return newHistoryArchiver(container, config, nil)
+	return newHistoryArchiver(container, config, nil, archivingIncompleteHistory)
 }
 
 func newHistoryArchiver(
 	container *archiver.HistoryBootstrapContainer,
 	config *config.S3Archiver,
 	historyIterator archiver.HistoryIterator,
+	archivingIncompleteHistory bool,
 ) (*historyArchiver, error) {
 	if len(config.Region) == 0 {
 		return nil, errEmptyAwsRegion
@@ -111,9 +114,10 @@ func newHistoryArchiver(
 	}
 
 	return &historyArchiver{
-		container:       container,
-		s3cli:           s3.New(sess),
-		historyIterator: historyIterator,
+		container:                  container,
+		s3cli:                      s3.New(sess),
+		historyIterator:            historyIterator,
+		archivingIncompleteHistory: archivingIncompleteHistory,
 	}, nil
 }
 func (h *historyArchiver) Archive(
@@ -178,7 +182,9 @@ func (h *historyArchiver) Archive(
 		}
 
 		if archiver.IsHistoryMutated(request, historyBlob.Body, *historyBlob.Header.IsLast, logger) {
-			return archiver.ErrHistoryMutated
+			if !h.archivingIncompleteHistory {
+				return archiver.ErrHistoryMutated
+			}
 		}
 
 		encodedHistoryBlob, err := encode(historyBlob)

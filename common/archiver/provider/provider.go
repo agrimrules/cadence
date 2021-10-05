@@ -71,6 +71,8 @@ type (
 		// Key for the archiver is scheme + serviceName
 		historyArchivers    map[string]archiver.HistoryArchiver
 		visibilityArchivers map[string]archiver.VisibilityArchiver
+
+		archivingIncompleteHistory bool
 	}
 )
 
@@ -78,14 +80,16 @@ type (
 func NewArchiverProvider(
 	historyArchiverConfigs *config.HistoryArchiverProvider,
 	visibilityArchiverConfigs *config.VisibilityArchiverProvider,
+	archivingIncompleteHistory bool,
 ) ArchiverProvider {
 	return &archiverProvider{
-		historyArchiverConfigs:    historyArchiverConfigs,
-		visibilityArchiverConfigs: visibilityArchiverConfigs,
-		historyContainers:         make(map[string]*archiver.HistoryBootstrapContainer),
-		visibilityContainers:      make(map[string]*archiver.VisibilityBootstrapContainer),
-		historyArchivers:          make(map[string]archiver.HistoryArchiver),
-		visibilityArchivers:       make(map[string]archiver.VisibilityArchiver),
+		historyArchiverConfigs:     historyArchiverConfigs,
+		visibilityArchiverConfigs:  visibilityArchiverConfigs,
+		historyContainers:          make(map[string]*archiver.HistoryBootstrapContainer),
+		visibilityContainers:       make(map[string]*archiver.VisibilityBootstrapContainer),
+		historyArchivers:           make(map[string]archiver.HistoryArchiver),
+		visibilityArchivers:        make(map[string]archiver.VisibilityArchiver),
+		archivingIncompleteHistory: archivingIncompleteHistory,
 	}
 }
 
@@ -137,20 +141,20 @@ func (p *archiverProvider) GetHistoryArchiver(scheme, serviceName string) (histo
 		if p.historyArchiverConfigs.Filestore == nil {
 			return nil, ErrArchiverConfigNotFound
 		}
-		historyArchiver, err = filestore.NewHistoryArchiver(container, p.historyArchiverConfigs.Filestore)
+		historyArchiver, err = filestore.NewHistoryArchiver(container, p.historyArchiverConfigs.Filestore, p.archivingIncompleteHistory)
 
 	case gcloud.URIScheme:
 		if p.historyArchiverConfigs.Gstorage == nil {
 			return nil, ErrArchiverConfigNotFound
 		}
 
-		historyArchiver, err = gcloud.NewHistoryArchiver(container, p.historyArchiverConfigs.Gstorage)
+		historyArchiver, err = gcloud.NewHistoryArchiver(container, p.historyArchiverConfigs.Gstorage, p.archivingIncompleteHistory)
 
 	case s3store.URIScheme:
 		if p.historyArchiverConfigs.S3store == nil {
 			return nil, ErrArchiverConfigNotFound
 		}
-		historyArchiver, err = s3store.NewHistoryArchiver(container, p.historyArchiverConfigs.S3store)
+		historyArchiver, err = s3store.NewHistoryArchiver(container, p.historyArchiverConfigs.S3store, p.archivingIncompleteHistory)
 	default:
 		return nil, ErrUnknownScheme
 	}

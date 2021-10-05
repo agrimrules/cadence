@@ -122,6 +122,12 @@ const (
 	// Default value: the value in static config: common.Config.Archival.Visibility.EnableRead
 	// Allowed filters: N/A
 	EnableReadFromVisibilityArchival
+	// AllowArchivingIncompleteHistory will continue on when seeing some error like history mutated(usually caused by database consistency issues)
+	// KeyName: system.allowArchivingIncompleteHistory
+	// Value type: Bool
+	// Default value: FALSE
+	// Allowed filters: N/A
+	AllowArchivingIncompleteHistory
 	// EnableDomainNotActiveAutoForwarding is whether enabling DC auto forwarding to active cluster for signal / start / signal with start API if domain is not active
 	// KeyName: system.enableDomainNotActiveAutoForwarding
 	// Value type: Bool
@@ -2011,6 +2017,7 @@ var Keys = map[Key]string{
 	EnableReadFromHistoryArchival:       "system.enableReadFromHistoryArchival",
 	VisibilityArchivalStatus:            "system.visibilityArchivalStatus",
 	EnableReadFromVisibilityArchival:    "system.enableReadFromVisibilityArchival",
+	AllowArchivingIncompleteHistory:     "system.allowArchivingIncompleteHistory",
 	EnableDomainNotActiveAutoForwarding: "system.enableDomainNotActiveAutoForwarding",
 	EnableGracefulFailover:              "system.enableGracefulFailover",
 	TransactionSizeLimit:                "system.transactionSizeLimit",

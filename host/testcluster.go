@@ -240,7 +240,7 @@ func newArchiverBase(enabled bool, logger log.Logger) *ArchiverBase {
 	if !enabled {
 		return &ArchiverBase{
 			metadata: archiver.NewArchivalMetadata(dcCollection, "", false, "", false, &config.ArchivalDomainDefaults{}),
-			provider: provider.NewArchiverProvider(nil, nil),
+			provider: provider.NewArchiverProvider(nil, nil, false),
 		}
 	}
 
@@ -263,6 +263,7 @@ func newArchiverBase(enabled bool, logger log.Logger) *ArchiverBase {
 		&config.VisibilityArchiverProvider{
 			Filestore: cfg,
 		},
+		false,
 	)
 	return &ArchiverBase{
 		metadata: archiver.NewArchivalMetadata(dcCollection, "enabled", true, "enabled", true, &config.ArchivalDomainDefaults{
