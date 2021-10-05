@@ -568,7 +568,7 @@ func (s *historyArchiverSuite) newTestHistoryArchiver(historyIterator archiver.H
 		FileMode: testFileModeStr,
 		DirMode:  testDirModeStr,
 	}
-	archiver, err := newHistoryArchiver(s.container, config, historyIterator)
+	archiver, err := newHistoryArchiver(s.container, config, historyIterator, false)
 	s.NoError(err)
 	return archiver
 }
